@@ -13,191 +13,475 @@
 
 <body>
 
-    <header>
-        <h1>Shop Credit Manager</h1>
-        <p>Customer Borrowing & Payment Management</p>
-    </header>
+    <div class="app-layout">
 
-    <main class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
 
-        <!-- Dashboard -->
-        <section class="dashboard">
-
-            <div class="card">
-                <h3>Total Customers</h3>
-                <h2 id="totalCustomers">0</h2>
+            <div class="brand">
+                <div class="brand-logo">SC</div>
+                <div class="brand-text">
+                    <h2>Shop Credit</h2>
+                    <span>MANAGEMENT SYSTEM</span>
+                </div>
             </div>
 
-            <div class="card">
-                <h3>Outstanding Principal</h3>
-                <h2 id="totalPrincipal">₹0</h2>
+            <div class="sidebar-divider"></div>
+
+            <p class="nav-heading">MAIN MENU</p>
+
+            <nav class="navigation">
+
+                <a href="#dashboard" class="nav-link active">
+                    <span class="nav-icon">▦</span>
+                    Dashboard
+                </a>
+
+                <a href="#registration" class="nav-link">
+                    <span class="nav-icon">＋</span>
+                    Add Customer
+                </a>
+
+                <a href="#search" class="nav-link">
+                    <span class="nav-icon">⌕</span>
+                    Find Customer
+                </a>
+
+                <a href="#customers" class="nav-link">
+                    <span class="nav-icon">♙</span>
+                    Customer Records
+                </a>
+
+                <a href="#customerSection" class="nav-link">
+                    <span class="nav-icon">▤</span>
+                    Transactions
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-divider"></div>
+
+                <div class="admin-profile">
+                    <div class="admin-avatar">A</div>
+                    <div>
+                        <strong>Administrator</strong>
+                        <small>Shop Management</small>
+                    </div>
+                </div>
             </div>
 
-            <div class="card">
-                <h3>Total Interest</h3>
-                <h2 id="totalInterest">₹0</h2>
-            </div>
+        </aside>
 
-            <div class="card">
-                <h3>Total Pending</h3>
-                <h2 id="totalPending">₹0</h2>
-            </div>
+        <!-- Main Content -->
+        <main class="main-content">
 
-        </section>
+            <!-- Top Header -->
+            <header class="topbar">
 
-        <!-- Register Customer -->
-        <section class="panel">
+                <div>
+                    <p class="welcome-label">BUSINESS MANAGEMENT</p>
+                    <h1>Dashboard</h1>
+                    <p class="page-subtitle">
+                        Welcome! Manage your customers and transactions.
+                    </p>
+                </div>
 
-            <h2>Register New Customer</h2>
+                <div class="topbar-status">
+                    <span class="status-indicator"></span>
+                    <span>Shop Management</span>
+                </div>
 
-            <form id="customerForm">
+            </header>
 
-                <label for="customerName">Customer Name</label>
-                <input type="text" id="customerName"
-                    placeholder="Enter customer name" required>
+            <!-- Admin Login -->
+            <section class="panel login-panel" id="loginSection">
 
-                <label for="customerPhone">Phone Number</label>
-                <input type="tel" id="customerPhone"
-                    placeholder="10-digit phone number"
-                    pattern="[0-9]{10}" maxlength="10" required>
+                <div>
+                    <h2>Administrator Login</h2>
+                    <p>Login to access customer records and manage transactions.</p>
+                </div>
 
-                <label for="customerAddress">Address</label>
-                <input type="text" id="customerAddress"
-                    placeholder="Enter address">
-
-                <button type="submit">Register Customer</button>
-
-            </form>
-
-            <p id="registrationMessage" class="message"></p>
-
-        </section>
-
-        <!-- Search -->
-        <section class="panel">
-
-            <h2>Search Customer</h2>
-
-            <div class="search-area">
-
-                <input type="text" id="searchInput"
-                    placeholder="Enter serial number, e.g. CUST001">
-
-                <button type="button" id="searchButton">
-                    Search
+                <button type="button" class="primary-button"
+                    onclick="adminLogin()">
+                    Login as Admin
                 </button>
 
-            </div>
+                <p id="loginMessage" class="message"></p>
 
-            <button type="button" class="secondary"
-                id="showAllButton">
-                Show All Customers
-            </button>
+            </section>
 
-        </section>
+            <!-- Dashboard -->
+            <section class="dashboard" id="dashboard">
 
-        <!-- Customer List -->
-        <section class="panel">
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <span>Total Customers</span>
+                        <div class="summary-icon teal">♙</div>
+                    </div>
 
-            <h2>Registered Customers</h2>
+                    <h2 id="totalCustomers">0</h2>
+                    <p>Registered customers</p>
+                </div>
 
-            <div class="table-container">
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <span>Outstanding Principal</span>
+                        <div class="summary-icon blue">₹</div>
+                    </div>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Serial Number</th>
-                            <th>Name</th>
-                            <th>Phone</th>
-                            <th>Pending Amount</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
+                    <h2 id="totalPrincipal">₹0</h2>
+                    <p>Remaining borrowed amount</p>
+                </div>
 
-                    <tbody id="customerList"></tbody>
-                </table>
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <span>Total Interest</span>
+                        <div class="summary-icon gold">%</div>
+                    </div>
 
-            </div>
+                    <h2 id="totalInterest">₹0</h2>
+                    <p>Accumulated interest</p>
+                </div>
 
-        </section>
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <span>Total Pending</span>
+                        <div class="summary-icon purple">▤</div>
+                    </div>
 
-        <!-- Customer Details -->
-        <section class="panel hidden" id="customerSection">
+                    <h2 id="totalPending">₹0</h2>
+                    <p>Principal and interest</p>
+                </div>
 
-            <h2>Customer Details</h2>
+            </section>
 
-            <div id="customerDetails"></div>
+            <!-- Quick Actions -->
+            <section class="content-card quick-actions">
 
-            <hr>
+                <div class="section-heading">
+                    <div>
+                        <h2>Quick Actions</h2>
+                        <p>Choose what you want to do.</p>
+                    </div>
+                </div>
 
-            <!-- Borrowing -->
-            <h3>Record New Borrowing</h3>
+                <div class="action-grid">
 
-            <form id="borrowForm">
+                    <a href="#registration" class="action-card">
+                        <div class="action-icon teal">＋</div>
+                        <div>
+                            <h3>Add Customer</h3>
+                            <p>Register a new customer</p>
+                        </div>
+                    </a>
 
-                <label for="borrowDate">Borrowing Date</label>
-                <input type="date" id="borrowDate" required>
+                    <a href="#search" class="action-card">
+                        <div class="action-icon blue">⌕</div>
+                        <div>
+                            <h3>Find Customer</h3>
+                            <p>Search customer records</p>
+                        </div>
+                    </a>
 
-                <label for="borrowAmount">Borrowing Amount (₹)</label>
-                <input type="number" id="borrowAmount"
-                    min="0.01" step="0.01" required>
+                    <a href="#customers" class="action-card">
+                        <div class="action-icon purple">♙</div>
+                        <div>
+                            <h3>View Customers</h3>
+                            <p>See all registered customers</p>
+                        </div>
+                    </a>
 
-                <button type="submit">Add Borrowing</button>
+                    <a href="#customerSection" class="action-card">
+                        <div class="action-icon gold">₹</div>
+                        <div>
+                            <h3>Manage Transactions</h3>
+                            <p>Record borrowing and payments</p>
+                        </div>
+                    </a>
 
-            </form>
+                </div>
 
-            <hr>
+            </section>
 
-            <!-- Payment -->
-            <h3>Record Payment</h3>
+            <!-- Customer Registration -->
+            <section class="content-card" id="registration">
 
-            <form id="paymentForm">
+                <div class="section-heading">
+                    <div>
+                        <h2>Register New Customer</h2>
+                        <p>Add customer information to the system.</p>
+                    </div>
 
-                <label for="paymentDate">Payment Date</label>
-                <input type="date" id="paymentDate" required>
+                    <div class="section-icon">＋</div>
+                </div>
 
-                <label for="paymentAmount">Payment Amount (₹)</label>
-                <input type="number" id="paymentAmount"
-                    min="0.01" step="0.01" required>
+                <form id="customerForm" class="form-grid">
 
-                <button type="submit">Submit Payment</button>
+                    <div class="form-group">
+                        <label for="customerName">Customer Name</label>
+                        <input
+                            type="text"
+                            id="customerName"
+                            placeholder="Enter customer name"
+                            required
+                        >
+                    </div>
 
-            </form>
+                    <div class="form-group">
+                        <label for="customerPhone">Phone Number</label>
+                        <input
+                            type="tel"
+                            id="customerPhone"
+                            placeholder="Enter 10-digit number"
+                            pattern="[0-9]{10}"
+                            maxlength="10"
+                            required
+                        >
+                    </div>
 
-            <hr>
+                    <div class="form-group full-width">
+                        <label for="customerAddress">Address</label>
+                        <input
+                            type="text"
+                            id="customerAddress"
+                            placeholder="Enter customer address"
+                        >
+                    </div>
 
-            <!-- History -->
-            <h3>Complete Transaction History</h3>
+                    <div class="form-actions">
+                        <button type="submit" class="primary-button">
+                            + Register Customer
+                        </button>
+                    </div>
 
-            <div class="table-container">
+                </form>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Transaction</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
+                <p id="registrationMessage" class="message"></p>
 
-                    <tbody id="historyList"></tbody>
-                </table>
+            </section>
 
-            </div>
+            <!-- Customer Search -->
+            <section class="content-card" id="search">
 
-            <button type="button" class="secondary"
-                id="closeDetailsButton">
-                Close Customer Details
-            </button>
+                <div class="section-heading">
+                    <div>
+                        <h2>Find Customer</h2>
+                        <p>Search using the customer's serial number.</p>
+                    </div>
+                </div>
 
-        </section>
+                <div class="search-area">
 
-    </main>
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Enter serial number (CUST001)"
+                    >
 
-    <footer>
-        <p>Shop Credit Manager | Monthly Interest: 2%</p>
-    </footer>
+                    <button
+                        type="button"
+                        id="searchButton"
+                        class="primary-button"
+                    >
+                        Search Customer
+                    </button>
 
+                </div>
+
+                <button
+                    type="button"
+                    class="text-button"
+                    id="showAllButton"
+                >
+                    View All Customers →
+                </button>
+
+            </section>
+
+            <!-- Customer Records -->
+            <section class="content-card" id="customers">
+
+                <div class="section-heading">
+                    <div>
+                        <h2>Customer Records</h2>
+                        <p>View registered customers and their pending balances.</p>
+                    </div>
+                </div>
+
+                <div class="table-container">
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Serial Number</th>
+                                <th>Customer Name</th>
+                                <th>Phone Number</th>
+                                <th>Pending Amount</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="customerList"></tbody>
+                    </table>
+
+                </div>
+
+            </section>
+
+            <!-- Customer Details -->
+            <section class="content-card hidden" id="customerSection">
+
+                <div class="section-heading">
+                    <div>
+                        <h2>Customer Details</h2>
+                        <p>Manage this customer's borrowing and payments.</p>
+                    </div>
+                </div>
+
+                <div id="customerDetails"></div>
+
+                <div class="transaction-grid">
+
+                    <!-- Borrowing -->
+                    <div class="transaction-card">
+
+                        <div class="transaction-title">
+                            <div class="action-icon teal">₹</div>
+                            <div>
+                                <h3>Record New Borrowing</h3>
+                                <p>Enter the borrowed amount.</p>
+                            </div>
+                        </div>
+
+                        <form id="borrowForm">
+
+                            <div class="form-group">
+                                <label for="borrowDate">Borrowing Date</label>
+                                <input
+                                    type="date"
+                                    id="borrowDate"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="borrowAmount">Amount (₹)</label>
+                                <input
+                                    type="number"
+                                    id="borrowAmount"
+                                    min="0.01"
+                                    step="0.01"
+                                    placeholder="Enter amount"
+                                    required
+                                >
+                            </div>
+
+                            <button type="submit" class="primary-button">
+                                Add Borrowing
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                    <!-- Payment -->
+                    <div class="transaction-card">
+
+                        <div class="transaction-title">
+                            <div class="action-icon blue">✓</div>
+                            <div>
+                                <h3>Record Payment</h3>
+                                <p>Enter the amount received.</p>
+                            </div>
+                        </div>
+
+                        <form id="paymentForm">
+
+                            <div class="form-group">
+                                <label for="paymentDate">Payment Date</label>
+                                <input
+                                    type="date"
+                                    id="paymentDate"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="paymentAmount">Amount (₹)</label>
+                                <input
+                                    type="number"
+                                    id="paymentAmount"
+                                    min="0.01"
+                                    step="0.01"
+                                    placeholder="Enter payment amount"
+                                    required
+                                >
+                            </div>
+
+                            <button type="submit" class="primary-button">
+                                Submit Payment
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+                <!-- Transaction History -->
+                <div class="history-section">
+
+                    <div class="section-heading">
+                        <div>
+                            <h2>Transaction History</h2>
+                            <p>Complete borrowing and payment records.</p>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Transaction</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="historyList"></tbody>
+                        </table>
+
+                    </div>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="secondary-button"
+                    id="closeDetailsButton"
+                >
+                    Close Customer Details
+                </button>
+
+            </section>
+
+            <!-- Footer -->
+            <footer>
+                <p>Shop Credit Manager</p>
+                <p>Customer Credit & Transaction Management</p>
+                <p>Monthly Interest Rate: 2%</p>
+            </footer>
+
+        </main>
+
+    </div>
+
+    <!-- Supabase Connection -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <!-- Project JavaScript -->
     <script src="script.js"></script>
 
 </body>

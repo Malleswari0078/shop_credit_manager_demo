@@ -1,17 +1,47 @@
 
 // =====================================
+// SUPABASE DATABASE CONNECTION
+// =====================================
+
+const SUPABASE_URL = "https://hbploxfxzoskgfqewyad.supabase.co";
+
+const SUPABASE_ANON_KEY = "sb_publishable__FTAi9yUsvm0CTFakwiztw_heSF3AgN";
+
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+async function adminLogin() {
+    const email = prompt("Enter admin email:");
+    if (!email) return;
+
+    const password = prompt("Enter admin password:");
+    if (!password) return;
+
+    const { data, error } =
+        await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+    if (error) {
+        alert("Login failed: " + error.message);
+        return;
+    }
+
+    alert("Admin login successful!");
+    console.log("Admin authenticated");
+    await loadCustomers();
+}
+console.log("Supabase connected successfully!");
+
+// =====================================
 // SHOP CREDIT MANAGER
 // =====================================
 
-// Load saved customer records
+// Customer records will be loaded from Supabase
 
-let customers = JSON.parse(
-    localStorage.getItem("shopCustomers") || "[]"
-);
-
-let nextSerial = Number(
-    localStorage.getItem("nextSerial") || "1"
-);
+let customers = [];
 
 let selectedCustomerId = null;
 
@@ -19,21 +49,84 @@ let selectedCustomerId = null;
 // GET HTML ELEMENTS
 
 const $ = id => document.getElementById(id);
+// LOAD CUSTOMERS FROM SUPABASE
+// LOAD CUSTOMERS, BORROWINGS AND PAYMENTS
+
+async function loadCustomers() {
+
+    const { data: customerData, error: customerError } =
+        await supabaseClient.from("customers").select("*");
+
+    if (customerError) {
+        alert(customerError.message);
+        return;
+    }
+
+    const { data: loanData, error: loanError } =
+        await supabaseClient.from("borrowings").select("*");
+
+    if (loanError) {
+        alert(loanError.message);
+        return;
+    }
+
+    const { data: paymentData, error: paymentError } =
+        await supabaseClient.from("payments").select("*");
+
+    if (paymentError) {
+        alert(paymentError.message);
+        return;
+    }
+
+    customers = customerData.map(row => {
+
+        const loans = loanData
+            .filter(loan => String(loan.customer_id) === String(row.id))
+            .map(loan => ({
+                dbId: loan.id,
+                date: loan.borrowed_date,
+                originalAmount: Number(loan.borrowed_amount),
+                principal: Number(loan.principal_remaining),
+                interest: Number(loan.interest_balance),
+                lastInterestDate: loan.last_interest_date
+            }));
+
+        const payments = [];
+
+        loans.forEach(loan => {
+            paymentData
+                .filter(payment => String(payment.borrowing_id) === String(loan.dbId))
+                .forEach(payment => {
+                    payments.push({
+                        date: payment.payment_date,
+                        amount: Number(payment.payment_amount),
+                        interestPaid: Number(payment.interest_paid),
+                        principalPaid: Number(payment.principal_paid)
+                    });
+                });
+        });
+
+        return {
+            dbId: row.id,
+            id: row.customer_code,
+            name: row.full_name,
+            phone: row.phone,
+            address: row.address,
+            loans,
+            payments
+        };
+    });
+
+    updateDashboard();
+    displayCustomers();
+}
+
 
 
 // SAVE DATA
 
-function saveData() {
-
-    localStorage.setItem(
-        "shopCustomers",
-        JSON.stringify(customers)
-    );
-
-    localStorage.setItem(
-        "nextSerial",
-        String(nextSerial)
-    );
+async function saveData() {
+    console.log("Data will be saved directly to Supabase.");
 }
 
 
@@ -96,7 +189,9 @@ function getCustomer(id) {
 // 1. REGISTER NEW CUSTOMER
 // =====================================
 
-$("customerForm").addEventListener("submit", function(event) {
+// REGISTER NEW CUSTOMER IN SUPABASE
+
+$("customerForm").addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
@@ -105,38 +200,48 @@ $("customerForm").addEventListener("submit", function(event) {
     const address = $("customerAddress").value.trim();
 
     if (!name || !/^\d{10}$/.test(phone)) {
-
         alert("Enter a valid name and 10-digit phone number.");
         return;
     }
 
-    const serial = "CUST" +
-        String(nextSerial).padStart(3, "0");
+    const { data: lastCustomer, error: searchError } =
+        await supabaseClient
+            .from("customers")
+            .select("customer_code")
+            .order("id", { ascending: false })
+            .limit(1);
 
-    const customer = {
+    if (searchError) {
+        alert(searchError.message);
+        return;
+    }
 
-        id: serial,
-        name: name,
-        phone: phone,
-        address: address,
+    const nextNumber = lastCustomer.length
+        ? Number(lastCustomer[0].customer_code.replace("CUST", "")) + 1
+        : 1;
 
-        loans: [],
-        payments: []
-    };
+    const serial = "CUST" + String(nextNumber).padStart(3, "0");
 
-    customers.push(customer);
+    const { error } = await supabaseClient
+        .from("customers")
+        .insert([{
+            customer_code: serial,
+            full_name: name,
+            phone: phone,
+            address: address
+        }]);
 
-    nextSerial++;
-
-    saveData();
+    if (error) {
+        alert("Registration failed: " + error.message);
+        return;
+    }
 
     this.reset();
 
     $("registrationMessage").textContent =
         "Customer registered successfully! Serial Number: " + serial;
 
-    updateDashboard();
-    displayCustomers();
+    await loadCustomers();
 
 });
 
@@ -526,7 +631,10 @@ function displayCustomerDetails() {
 // 10. ADD NEW BORROWING
 // =====================================
 
-$("borrowForm").addEventListener("submit", function(event) {
+
+// RECORD NEW BORROWING IN SUPABASE
+
+$("borrowForm").addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
@@ -535,53 +643,54 @@ $("borrowForm").addEventListener("submit", function(event) {
     if (!customer) return;
 
     const date = $("borrowDate").value;
-
-    const amount = Number($("borrowAmount").value);
+    const amount = roundMoney(Number($("borrowAmount").value));
 
     if (!validTransactionDate(customer, date) ||
         !Number.isFinite(amount) || amount <= 0) {
 
-        alert("Enter a valid amount and a transaction date that is not earlier than the latest recorded transaction.");
-
+        alert("Enter a valid amount and borrowing date.");
         return;
     }
 
-    const loan = {
+    const { data, error } = await supabaseClient
+        .from("borrowings")
+        .insert([{
+            customer_id: customer.dbId,
+            borrowed_amount: amount,
+            borrowed_date: date,
+            principal_remaining: amount,
+            interest_balance: 0,
+            last_interest_date: date
+        }])
+        .select()
+        .single();
 
-        date: date,
-
-        originalAmount: roundMoney(amount),
-
-        principal: roundMoney(amount),
-
-        interest: 0,
-
-        lastInterestDate: date
-
-    };
-
-    customer.loans.push(loan);
-
-    saveData();
+    if (error) {
+        alert("Borrowing failed: " + error.message);
+        return;
+    }
 
     this.reset();
-
     $("borrowDate").value = today();
 
-    alert("Borrowing recorded successfully!");
+    await loadCustomers();
 
     displayCustomerDetails();
-
     displayHistory();
 
+    alert("Borrowing recorded successfully!");
 });
+
 
 
 // =====================================
 // 11. RECORD PAYMENT
 // =====================================
 
-$("paymentForm").addEventListener("submit", function(event) {
+
+ // RECORD PAYMENT IN SUPABASE
+
+$("paymentForm").addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
@@ -590,146 +699,128 @@ $("paymentForm").addEventListener("submit", function(event) {
     if (!customer) return;
 
     const date = $("paymentDate").value;
-
-    const amount = roundMoney(
-        Number($("paymentAmount").value)
-    );
+    const amount = roundMoney(Number($("paymentAmount").value));
 
     if (!validTransactionDate(customer, date) ||
         !Number.isFinite(amount) || amount <= 0) {
 
         alert("Enter a valid payment amount and date.");
-
         return;
     }
 
     const balance = customerBalance(customer, date);
 
     if (amount > balance.total) {
-
         alert("Payment cannot exceed the pending balance.");
-
         return;
     }
 
     let remaining = amount;
 
-    let interestPaid = 0;
+    const allocations = customer.loans.map(loan => {
 
-    let principalPaid = 0;
+        const months = completedMonths(loan.lastInterestDate, date);
 
-
-    // First update accrued interest on all loans.
-
-    customer.loans.forEach(loan => {
-
-        const result = loanInterest(loan, date);
-
-        loan.interest = roundMoney(
-            loan.interest + result.amount
+        const accruedInterest = roundMoney(
+            loan.principal * 0.02 * months
         );
 
-        loan.lastInterestDate = addMonths(
-            loan.lastInterestDate,
-            result.months
+        return {
+            loan,
+            principal: loan.principal,
+            interest: roundMoney(loan.interest + accruedInterest),
+            lastInterestDate: addMonths(loan.lastInterestDate, months),
+            interestPaid: 0,
+            principalPaid: 0
+        };
+    });
+
+    // Pay interest first
+
+    allocations.forEach(item => {
+
+        const paid = roundMoney(
+            Math.min(remaining, item.interest)
         );
+
+        item.interest = roundMoney(item.interest - paid);
+        item.interestPaid = paid;
+        remaining = roundMoney(remaining - paid);
 
     });
 
+    // Pay principal next
 
-    // Pay interest before principal.
-
-    customer.loans.forEach(loan => {
-
-        const paid = Math.min(
-            remaining,
-            loan.interest
-        );
-
-        loan.interest = roundMoney(
-            loan.interest - paid
-        );
-
-        remaining = roundMoney(
-            remaining - paid
-        );
-
-        interestPaid = roundMoney(
-            interestPaid + paid
-        );
-
-    });
-
-
-    // Pay outstanding principal.
-
-    customer.loans.forEach(loan => {
+    allocations.forEach(item => {
 
         if (remaining <= 0) return;
 
-        const paid = Math.min(
-            remaining,
-            loan.principal
+        const paid = roundMoney(
+            Math.min(remaining, item.principal)
         );
 
-        loan.principal = roundMoney(
-            loan.principal - paid
-        );
-
-        remaining = roundMoney(
-            remaining - paid
-        );
-
-        principalPaid = roundMoney(
-            principalPaid + paid
-        );
-
-        // Restart the interest period only
-        // when principal is reduced.
+        item.principal = roundMoney(item.principal - paid);
+        item.principalPaid = paid;
+        remaining = roundMoney(remaining - paid);
 
         if (paid > 0) {
-
-            loan.lastInterestDate = date;
-
+            item.lastInterestDate = date;
         }
 
     });
 
+    // Save each borrowing balance and its payment
 
-    // Save payment history.
+    for (const item of allocations) {
 
-    customer.payments.push({
+        const paymentAmount = roundMoney(
+            item.interestPaid + item.principalPaid
+        );
 
-        date: date,
+        if (paymentAmount <= 0) continue;
 
-        amount: amount,
+        const { error: updateError } = await supabaseClient
+            .from("borrowings")
+            .update({
+                principal_remaining: item.principal,
+                interest_balance: item.interest,
+                last_interest_date: item.lastInterestDate
+            })
+            .eq("id", item.loan.dbId);
 
-        interestPaid: interestPaid,
+        if (updateError) {
+            alert("Unable to update borrowing: " + updateError.message);
+            return;
+        }
 
-        principalPaid: principalPaid
+        const { error: paymentError } = await supabaseClient
+            .from("payments")
+            .insert([{
+                borrowing_id: item.loan.dbId,
+                payment_amount: paymentAmount,
+                payment_date: date,
+                interest_paid: item.interestPaid,
+                principal_paid: item.principalPaid
+            }]);
 
-    });
-
-
-    // Keep fully paid loans for history.
-
-    saveData();
+        if (paymentError) {
+            alert("Unable to save payment: " + paymentError.message);
+            return;
+        }
+    }
 
     this.reset();
-
     $("paymentDate").value = today();
 
-    alert(
-        "Payment recorded successfully!\n\n" +
-        "Interest paid: " + money(interestPaid) +
-        "\nPrincipal paid: " + money(principalPaid)
-    );
+    await loadCustomers();
 
     displayCustomerDetails();
-
     displayHistory();
 
+    alert("Payment recorded successfully!");
+
 });
+
 
 
 // =====================================
